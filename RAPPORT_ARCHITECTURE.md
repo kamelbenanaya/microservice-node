@@ -80,7 +80,7 @@ graph TD
 
 ### 4.1. Création d'une Commande (`POST /commandes`)
 
-Ce diagramme montre les étapes lorsqu'un client crée une nouvelle commande.
+Ce diagramme montre les étapes lorsqu'un client crée une nouvelle commande. (Note: Activation lines removed to ensure rendering).
 
 ```mermaid
 sequenceDiagram
@@ -93,41 +93,38 @@ sequenceDiagram
     participant DB_L as DB Livres (sqlite)
 
     Client->>SC: POST /commandes (userId, bookId)
-    activate SC
+
+    %% --- Check User --- 
     SC->>SU: GET /users/:userId
-    activate SU
     SU->>DB_U: Find user by ID
-    activate DB_U
     DB_U-->>SU: User data (or not found)
-    deactivate DB_U
-    alt User Found
+
+    alt User Exists
         SU-->>SC: 200 OK (User details)
-        deactivate SU
+
+        %% --- Check Book (only if user exists) --- 
         SC->>SL: GET /livres/:bookId
-        activate SL
         SL->>DB_L: Find book by ID
-        activate DB_L
         DB_L-->>SL: Book data (or not found)
-        deactivate DB_L
-        alt Book Found
+
+        alt Book Exists
             SL-->>SC: 200 OK (Book details)
-            deactivate SL
+
+            %% --- Create Order (only if user and book exist) ---
             SC->>DB_C: INSERT INTO Order (userId, bookId, ...)
-            activate DB_C
             DB_C-->>SC: New Order ID
-            deactivate DB_C
             SC-->>Client: 201 Created (Order details)
+
         else Book Not Found
             SL-->>SC: 404 Not Found
-            deactivate SL
             SC-->>Client: 404 Livre non trouvé
         end
+
     else User Not Found
-         SU-->>SC: 404 Not Found
-         deactivate SU
-         SC-->>Client: 404 Utilisateur non trouvé
+        SU-->>SC: 404 Not Found
+        SC-->>Client: 404 Utilisateur non trouvé
     end
-    deactivate SC
+
 ```
 
 ### 4.2. Récupération des Détails d'une Commande (`GET /commandes/{id}`)
@@ -145,35 +142,27 @@ sequenceDiagram
     participant DB_L as DB Livres (sqlite)
 
     Client->>SC: GET /commandes/:orderId
-    activate SC
+
     SC->>DB_C: Find Order by ID
-    activate DB_C
     DB_C-->>SC: Order data (userId, bookId)
-    deactivate DB_C
+
     alt Order Found
         %% Simulate parallel calls - Mermaid doesn't have true parallel syntax
         %% We show them sequentially but note they happen together.
         SC->>SU: GET /users/:userId (Parallel Call)
-        activate SU
         SC->>SL: GET /livres/:bookId (Parallel Call)
-        activate SL
         SU->>DB_U: Find user by ID
-        activate DB_U
         SL->>DB_L: Find book by ID
-        activate DB_L
         DB_U-->>SU: User data (or not found/error)
-        deactivate DB_U
         DB_L-->>SL: Book data (or not found/error)
-        deactivate DB_L
         SU-->>SC: User Name (or default)
-        deactivate SU
         SL-->>SC: Book Title (or default)
-        deactivate SL
         SC-->>Client: 200 OK (Enriched Order Details)
+
     else Order Not Found
         SC-->>Client: 404 Not Found
     end
-    deactivate SC
+
 ```
 
 ## 5. Technologies Utilisées
