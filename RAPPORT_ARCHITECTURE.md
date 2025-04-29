@@ -92,28 +92,42 @@ sequenceDiagram
     participant DB_U as DB Utilisateurs (sqlite)
     participant DB_L as DB Livres (sqlite)
 
-    Client->>+SC: POST /commandes (userId, bookId)
-    SC->>+SU: GET /users/:userId
-    SU->>+DB_U: Find user by ID
-    DB_U-->>-SU: User data (or not found)
+    Client->>SC: POST /commandes (userId, bookId)
+    activate SC
+    SC->>SU: GET /users/:userId
+    activate SU
+    SU->>DB_U: Find user by ID
+    activate DB_U
+    DB_U-->>SU: User data (or not found)
+    deactivate DB_U
     alt User Found
-        SU-->>-SC: 200 OK (User details)
-        SC->>+SL: GET /livres/:bookId
-        SL->>+DB_L: Find book by ID
-        DB_L-->>-SL: Book data (or not found)
+        SU-->>SC: 200 OK (User details)
+        deactivate SU
+        SC->>SL: GET /livres/:bookId
+        activate SL
+        SL->>DB_L: Find book by ID
+        activate DB_L
+        DB_L-->>SL: Book data (or not found)
+        deactivate DB_L
         alt Book Found
-            SL-->>-SC: 200 OK (Book details)
-            SC->>+DB_C: INSERT INTO Order (userId, bookId, ...)
-            DB_C-->>-SC: New Order ID
-            SC-->>-Client: 201 Created (Order details)
+            SL-->>SC: 200 OK (Book details)
+            deactivate SL
+            SC->>DB_C: INSERT INTO Order (userId, bookId, ...)
+            activate DB_C
+            DB_C-->>SC: New Order ID
+            deactivate DB_C
+            SC-->>Client: 201 Created (Order details)
         else Book Not Found
-            SL-->>-SC: 404 Not Found
-            SC-->>-Client: 404 Livre non trouvé
+            SL-->>SC: 404 Not Found
+            deactivate SL
+            SC-->>Client: 404 Livre non trouvé
         end
     else User Not Found
-         SU-->>-SC: 404 Not Found
-         SC-->>-Client: 404 Utilisateur non trouvé
+         SU-->>SC: 404 Not Found
+         deactivate SU
+         SC-->>Client: 404 Utilisateur non trouvé
     end
+    deactivate SC
 ```
 
 ### 4.2. Récupération des Détails d'une Commande (`GET /commandes/{id}`)
@@ -130,22 +144,36 @@ sequenceDiagram
     participant DB_U as DB Utilisateurs (sqlite)
     participant DB_L as DB Livres (sqlite)
 
-    Client->>+SC: GET /commandes/:orderId
-    SC->>+DB_C: Find Order by ID
-    DB_C-->>-SC: Order data (userId, bookId)
+    Client->>SC: GET /commandes/:orderId
+    activate SC
+    SC->>DB_C: Find Order by ID
+    activate DB_C
+    DB_C-->>SC: Order data (userId, bookId)
+    deactivate DB_C
     alt Order Found
-        SC->>+SU: GET /users/:userId (Parallel)
-        SC->>+SL: GET /livres/:bookId (Parallel)
-        SU->>+DB_U: Find user by ID
-        SL->>+DB_L: Find book by ID
-        DB_U-->>-SU: User data (or not found/error)
-        DB_L-->>-SL: Book data (or not found/error)
-        SU-->>-SC: User Name (or default)
-        SL-->>-SC: Book Title (or default)
-        SC-->>-Client: 200 OK (Enriched Order Details)
+        %% Simulate parallel calls - Mermaid doesn't have true parallel syntax
+        %% We show them sequentially but note they happen together.
+        SC->>SU: GET /users/:userId (Parallel Call)
+        activate SU
+        SC->>SL: GET /livres/:bookId (Parallel Call)
+        activate SL
+        SU->>DB_U: Find user by ID
+        activate DB_U
+        SL->>DB_L: Find book by ID
+        activate DB_L
+        DB_U-->>SU: User data (or not found/error)
+        deactivate DB_U
+        DB_L-->>SL: Book data (or not found/error)
+        deactivate DB_L
+        SU-->>SC: User Name (or default)
+        deactivate SU
+        SL-->>SC: Book Title (or default)
+        deactivate SL
+        SC-->>Client: 200 OK (Enriched Order Details)
     else Order Not Found
-        SC-->>-Client: 404 Not Found
+        SC-->>Client: 404 Not Found
     end
+    deactivate SC
 ```
 
 ## 5. Technologies Utilisées
