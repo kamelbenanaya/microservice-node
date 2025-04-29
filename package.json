@@ -1,0 +1,12 @@
+{
+  "name": "microservice-projet",
+  "version": "1.0.0",
+  "description": "Ce projet implémente un système distribué de gestion de commandes pour une librairie en utilisant une architecture microservices.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
